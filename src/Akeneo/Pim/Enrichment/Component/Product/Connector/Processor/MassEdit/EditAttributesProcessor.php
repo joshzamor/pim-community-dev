@@ -2,11 +2,11 @@
 
 namespace Akeneo\Pim\Enrichment\Component\Product\Connector\Processor\MassEdit;
 
+use Akeneo\Pim\Enrichment\Component\Product\Comparator\Filter\FilterInterface;
 use Akeneo\Pim\Enrichment\Component\Product\EntityWithFamilyVariant\CheckAttributeEditable;
 use Akeneo\Pim\Enrichment\Component\Product\Model\EntityWithFamilyInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Model\ProductInterface;
 use Akeneo\Tool\Component\Batch\Item\DataInvalidItem;
-use Akeneo\Tool\Component\StorageUtils\Detacher\ObjectDetacherInterface;
 use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
 use Akeneo\Tool\Component\StorageUtils\Updater\ObjectUpdaterInterface;
 use Doctrine\Common\Util\ClassUtils;
@@ -39,21 +39,17 @@ class EditAttributesProcessor extends AbstractProcessor
     /** @var CheckAttributeEditable */
     protected $checkAttributeEditable;
 
-    /**
-     * @param ValidatorInterface                    $productValidator
-     * @param ValidatorInterface                    $productModelValidator
-     * @param ObjectUpdaterInterface                $productUpdater
-     * @param ObjectUpdaterInterface                $productModelUpdater
-     * @param IdentifiableObjectRepositoryInterface $attributeRepository
-     * @param CheckAttributeEditable                $checkAttributeEditable
-     */
+    /** @var FilterInterface */
+    protected $emptyValuesFilter;
+
     public function __construct(
         ValidatorInterface $productValidator,
         ValidatorInterface $productModelValidator,
         ObjectUpdaterInterface $productUpdater,
         ObjectUpdaterInterface $productModelUpdater,
         IdentifiableObjectRepositoryInterface $attributeRepository,
-        CheckAttributeEditable $checkAttributeEditable
+        CheckAttributeEditable $checkAttributeEditable,
+        FilterInterface $emptyValuesFilter
     ) {
         $this->productValidator = $productValidator;
         $this->productModelValidator = $productModelValidator;
@@ -61,6 +57,7 @@ class EditAttributesProcessor extends AbstractProcessor
         $this->productModelUpdater = $productModelUpdater;
         $this->attributeRepository = $attributeRepository;
         $this->checkAttributeEditable = $checkAttributeEditable;
+        $this->emptyValuesFilter = $emptyValuesFilter;
     }
 
     /**
@@ -77,14 +74,15 @@ class EditAttributesProcessor extends AbstractProcessor
         }
 
         $filteredValues = $this->extractValuesToUpdate($entity, $actions[0]);
+        $filteredValues = $this->emptyValuesFilter->filter($entity, ['values' => $filteredValues]);
 
-        if (empty($filteredValues)) {
+        if (empty($filteredValues['values'])) {
             $this->stepExecution->incrementSummaryInfo('skipped_products');
 
             return null;
         }
 
-        $entity = $this->updateEntity($entity, $filteredValues);
+        $entity = $this->updateEntity($entity, $filteredValues['values']);
         if (!$this->isValid($entity)) {
             $this->stepExecution->incrementSummaryInfo('skipped_products');
 
