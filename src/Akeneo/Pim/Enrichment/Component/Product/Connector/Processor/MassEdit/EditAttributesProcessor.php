@@ -40,7 +40,10 @@ class EditAttributesProcessor extends AbstractProcessor
     protected $checkAttributeEditable;
 
     /** @var FilterInterface */
-    protected $emptyValuesFilter;
+    protected $productEmptyValuesFilter;
+
+    /** @var FilterInterface */
+    protected $productModelEmptyValuesFilter;
 
     public function __construct(
         ValidatorInterface $productValidator,
@@ -49,7 +52,8 @@ class EditAttributesProcessor extends AbstractProcessor
         ObjectUpdaterInterface $productModelUpdater,
         IdentifiableObjectRepositoryInterface $attributeRepository,
         CheckAttributeEditable $checkAttributeEditable,
-        FilterInterface $emptyValuesFilter
+        FilterInterface $productEmptyValuesFilter,
+        FilterInterface $productModelEmptyValuesFilter
     ) {
         $this->productValidator = $productValidator;
         $this->productModelValidator = $productModelValidator;
@@ -57,7 +61,8 @@ class EditAttributesProcessor extends AbstractProcessor
         $this->productModelUpdater = $productModelUpdater;
         $this->attributeRepository = $attributeRepository;
         $this->checkAttributeEditable = $checkAttributeEditable;
-        $this->emptyValuesFilter = $emptyValuesFilter;
+        $this->productEmptyValuesFilter = $productEmptyValuesFilter;
+        $this->productModelEmptyValuesFilter = $productModelEmptyValuesFilter;
     }
 
     /**
@@ -74,7 +79,11 @@ class EditAttributesProcessor extends AbstractProcessor
         }
 
         $filteredValues = $this->extractValuesToUpdate($entity, $actions[0]);
-        $filteredValues = $this->emptyValuesFilter->filter($entity, ['values' => $filteredValues]);
+        if ($entity instanceof ProductInterface) {
+            $filteredValues = $this->productEmptyValuesFilter->filter($entity, ['values' => $filteredValues]);
+        } else {
+            $filteredValues = $this->productModelEmptyValuesFilter->filter($entity, ['values' => $filteredValues]);
+        }
 
         if (empty($filteredValues['values'])) {
             $this->stepExecution->incrementSummaryInfo('skipped_products');

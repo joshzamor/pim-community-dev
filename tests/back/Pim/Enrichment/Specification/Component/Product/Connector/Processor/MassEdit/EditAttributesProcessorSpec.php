@@ -30,15 +30,24 @@ class EditAttributesProcessorSpec extends ObjectBehavior
         ObjectUpdaterInterface $productModelUpdater,
         IdentifiableObjectRepositoryInterface $attributeRepository,
         CheckAttributeEditable $checkAttributeEditable,
-        FilterInterface $emptyValuesFilter
+        FilterInterface $productEmptyValuesFilter,
+        FilterInterface $productModelEmptyValuesFilter
     ) {
         // TODO: add a test where values are actually filtered
-        $emptyValuesFilter->filter(
+        $productEmptyValuesFilter->filter(
+            Argument::type(ProductInterface::class),
+            Argument::type('array')
+        )->will(function (array $args): array {
+            return $args[1];
+        }
+        );
+
+        $productModelEmptyValuesFilter->filter(
             Argument::type(EntityWithValuesInterface::class),
             Argument::type('array')
         )->will(function (array $args): array {
-                    return $args[1];
-               }
+            return $args[1];
+        }
         );
 
         $this->beConstructedWith(
@@ -48,7 +57,8 @@ class EditAttributesProcessorSpec extends ObjectBehavior
             $productModelUpdater,
             $attributeRepository,
             $checkAttributeEditable,
-            $emptyValuesFilter
+            $productEmptyValuesFilter,
+            $productModelEmptyValuesFilter
         );
     }
 
