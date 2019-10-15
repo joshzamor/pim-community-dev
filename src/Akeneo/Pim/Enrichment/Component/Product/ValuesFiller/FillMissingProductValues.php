@@ -152,7 +152,9 @@ class FillMissingProductValues
      */
     private function createProductValuesInPivotFormat(array $productStandardFormat): array
     {
-        $attributeCodes = array_keys($productStandardFormat['values']);
+        $attributeCodes = array_map(function ($key) {
+            return (string) $key;
+        }, array_keys($productStandardFormat['values']));
         $attributes = $this->getAttributes->forCodes($attributeCodes);
         $nonPriceAttributes = array_filter($attributes, function (Attribute $attribute): bool {
             return AttributeTypes::PRICE_COLLECTION !== $attribute->type();
@@ -253,7 +255,9 @@ class FillMissingProductValues
      */
     private function createPriceProductValuesInPivotFormat(array $productStandardFormat): array
     {
-        $attributeCodes = array_keys($productStandardFormat['values']);
+        $attributeCodes = array_map(function ($key) {
+            return (string) $key;
+        }, array_keys($productStandardFormat['values']));
         $attributes = $this->getAttributes->forCodes($attributeCodes);
         $priceAttributes = array_filter($attributes, function (Attribute $attribute): bool {
             return AttributeTypes::PRICE_COLLECTION === $attribute->type();
