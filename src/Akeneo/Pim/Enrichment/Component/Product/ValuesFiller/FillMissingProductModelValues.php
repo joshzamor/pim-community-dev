@@ -75,7 +75,6 @@ class FillMissingProductModelValues implements FillMissingValuesInterface
 
         $productModelStandardFormat['values'] = $standardProductModelValues + $standardPriceProductModelValues;
 
-
         return $productModelStandardFormat;
     }
 

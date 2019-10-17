@@ -18,12 +18,14 @@ services:
         arguments:
             - '@pim_api.normalizer.values'
             - '@pim_catalog.normalizer.standard.datetime'
+            - '@pim_catalog.product.fill_missing_values'
 
     pim_api.normalizer.connector_product_models:
         class: 'Akeneo\Pim\Enrichment\Component\Product\Normalizer\ExternalApi\ConnectorProductModelNormalizer'
         arguments:
             - '@pim_api.normalizer.values'
             - '@pim_catalog.normalizer.standard.datetime'
+            - '@pim_catalog.product_model.fill_missing_values'
 
     pim_api.normalizer.values:
         class: 'Akeneo\Pim\Enrichment\Component\Product\Normalizer\ExternalApi\ValuesNormalizer'

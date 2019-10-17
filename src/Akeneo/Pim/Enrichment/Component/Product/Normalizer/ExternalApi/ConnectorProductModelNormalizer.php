@@ -6,6 +6,7 @@ namespace Akeneo\Pim\Enrichment\Component\Product\Normalizer\ExternalApi;
 use Akeneo\Pim\Enrichment\Component\Product\Connector\ReadModel\ConnectorProductModel;
 use Akeneo\Pim\Enrichment\Component\Product\Connector\ReadModel\ConnectorProductModelList;
 use Akeneo\Pim\Enrichment\Component\Product\Normalizer\Standard\DateTimeNormalizer;
+use Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterface;
 
 /**
  * @author    Anael Chardan <anael.chardan@akeneo.com>
@@ -21,10 +22,17 @@ final class ConnectorProductModelNormalizer
     /** @var DateTimeNormalizer */
     private $dateTimeNormalizer;
 
-    public function __construct(ValuesNormalizer $valuesNormalizer, DateTimeNormalizer $dateTimeNormalizer)
-    {
+    /** @var FillMissingValuesInterface */
+    private $fillMissingValues;
+
+    public function __construct(
+        ValuesNormalizer $valuesNormalizer,
+        DateTimeNormalizer $dateTimeNormalizer,
+        FillMissingValuesInterface $fillMissingValues
+    ) {
         $this->valuesNormalizer = $valuesNormalizer;
         $this->dateTimeNormalizer = $dateTimeNormalizer;
+        $this->fillMissingValues = $fillMissingValues;
     }
 
     public function normalizeConnectorProductModelList(ConnectorProductModelList $list): array
@@ -36,14 +44,14 @@ final class ConnectorProductModelNormalizer
 
     public function normalizeConnectorProductModel(ConnectorProductModel $connectorProductModel): array
     {
-        $values = $this->valuesNormalizer->normalize($connectorProductModel->values(), 'standard');
+
         $normalizedProductModel = [
             'code' => $connectorProductModel->code(),
             'family' => $connectorProductModel->familyCode(),
             'family_variant' => $connectorProductModel->familyVariantCode(),
             'parent' => $connectorProductModel->parentCode(),
             'categories' => $connectorProductModel->categoryCodes(),
-            'values' => empty($values) ? (object) [] : $values,
+            'values' => $values = $this->valuesNormalizer->normalize($connectorProductModel->values(), 'standard'),
             'created' => $this->dateTimeNormalizer->normalize($connectorProductModel->createdDate()),
             'updated' => $this->dateTimeNormalizer->normalize($connectorProductModel->updatedDate()),
             'associations' => empty($connectorProductModel->associations()) ? (object) [] : $connectorProductModel->associations(),
@@ -52,6 +60,9 @@ final class ConnectorProductModelNormalizer
         if (!empty($connectorProductModel->metadata())) {
             $normalizedProductModel['metadata'] = $connectorProductModel->metadata();
         }
+
+        $standardFilled = $this->fillMissingValues->fromStandardFormat($normalizedProductModel);
+        $normalizedProductModel['values'] = empty($standardFilled['values']) ? (object) [] : $standardFilled['values'];
 
         return $normalizedProductModel;
     }

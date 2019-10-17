@@ -176,7 +176,6 @@ JSON;
 
     public function testOffsetPaginationListProductsWithChannelLocalesAndAttributesParams()
     {
-        $standardizedProducts = $this->getStandardizedProducts();
         $client = $this->createAuthenticatedClient();
 
         $client->request('GET', 'api/rest/v1/products?scope=tablet&locales=fr_FR&attributes=a_scopable_price,a_metric,a_localized_and_scopable_text_area&pagination_type=page');
