@@ -246,6 +246,21 @@
 - Move class from `Akeneo\Pim\Enrichment\Bundle\ProductModel\Query\Sql\GetValuesAndPropertiesFromProductModelCodes` to `Akeneo\Pim\Enrichment\Bundle\Storage\Sql\ProductModel\GetValuesAndPropertiesFromProductModelCodes`
 - Change constructor of `Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi\ProductController` to add `Akeneo\Tool\Bundle\ApiBundle\EventSubscriber\BatchEventSubscriberInterface`
 - Change constructor of `Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi\ProductModelController` to add `Akeneo\Tool\Bundle\ApiBundle\EventSubscriber\BatchEventSubscriberInterface`
+- Change constructor of `Akeneo\Pim\Enrichment\Bundle\Controller\InternalApi\ValuesController` to add `Akeneo\Pim\Enrichment\Component\Product\Comparator\Filter\FilterInterface`
+- Change constructor of `Akeneo\Pim\Enrichment\Component\Product\Connector\Processor\MassEdit\EditAttributesProcessor` to add `Akeneo\Pim\Enrichment\Component\Product\Comparator\Filter\FilterInterface` and `Akeneo\Pim\Enrichment\Component\Product\Comparator\Filter\FilterInterface`
+- Change constructor of `Akeneo\Pim\Enrichment\Component\Product\Connector\Processor\Normalization\ProductProcessor` to
+    - remove `Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\EntityWithFamilyValuesFillerInterface`
+    - add `Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterface`
+- Change constructor of `Akeneo\Pim\Enrichment\Component\Product\Connector\Processor\QuickExport\ProductAndProductModelProcessor` to
+    - remove `Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\EntityWithFamilyValuesFillerInterface`
+    - add `Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterface` (as `fillMissingProductModelValues`)
+    - add `Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterface` (as `fillMissingProductValues`)
+- Change constructor of `Akeneo\Pim\Enrichment\Component\Product\Normalizer\InternalApi` to
+    - remove `Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\EntityWithFamilyValuesFillerInterface`
+    - add `Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterface`
+- Change constructor of `Akeneo\Pim\Enrichment\Component\Product\Normalizer\InternalApi` to
+    - remove `Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\EntityWithFamilyValuesFillerInterface`
+    - add `Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterface`
 
 ### CLI Commands
 
