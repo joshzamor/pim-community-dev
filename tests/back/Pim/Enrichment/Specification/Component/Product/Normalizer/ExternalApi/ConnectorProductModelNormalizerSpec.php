@@ -12,7 +12,6 @@ use Akeneo\Pim\Enrichment\Component\Product\Normalizer\ExternalApi\ValuesNormali
 use Akeneo\Pim\Enrichment\Component\Product\Normalizer\Standard\DateTimeNormalizer;
 use Akeneo\Pim\Enrichment\Component\Product\Normalizer\Standard\Product\ProductValueNormalizer;
 use Akeneo\Pim\Enrichment\Component\Product\Value\ScalarValue;
-use Akeneo\Pim\Enrichment\Component\Product\ValuesFiller\FillMissingValuesInterface;
 use Akeneo\Pim\Structure\Component\AttributeTypes;
 use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
@@ -25,15 +24,11 @@ use Symfony\Component\Routing\RouterInterface;
  */
 class ConnectorProductModelNormalizerSpec extends ObjectBehavior
 {
-    function let(
-        ProductValueNormalizer $productValuesNormalizer,
-        RouterInterface $router,
-        FillMissingValuesInterface $fillMissingValues
-    ) {
+    function let(ProductValueNormalizer $productValuesNormalizer, RouterInterface $router)
+    {
         $this->beConstructedWith(
             new ValuesNormalizer($productValuesNormalizer->getWrappedObject(), $router->getWrappedObject()),
-            new DateTimeNormalizer(),
-            $fillMissingValues
+            new DateTimeNormalizer()
         );
         $productValuesNormalizer->normalize(Argument::type(ReadValueCollection::class), 'standard')->willReturn([]);
     }
@@ -43,7 +38,7 @@ class ConnectorProductModelNormalizerSpec extends ObjectBehavior
         $this->shouldBeAnInstanceOf(ConnectorProductModelNormalizer::class);
     }
 
-    function it_normalizes_a_list_of_connector_product_models(FillMissingValuesInterface $fillMissingValues)
+    function it_normalizes_a_list_of_connector_product_models()
     {
         $connector1 = new ConnectorProductModel(
             1,
@@ -70,31 +65,6 @@ class ConnectorProductModelNormalizerSpec extends ObjectBehavior
             new ReadValueCollection()
         );
 
-        $normalizedProductModel1 = [
-            'code' => 'code_1',
-            'family' => 'family',
-            'family_variant' => 'family_variant',
-            'parent' => null,
-            'categories' => ['category_code_1', 'category_code_2'],
-            'values' => (object)[],
-            'created' => '2019-04-23T15:55:50+00:00',
-            'updated' => '2019-04-25T15:55:50+00:00',
-            'associations' => [
-                'X_SELL' => [
-                    'products' => ['product_code_1'],
-                    'product_models' => [],
-                    'groups' => ['group_code_2'],
-                ],
-                'UPSELL' => [
-                    'products' => ['product_code_4'],
-                    'product_models' => ['product_model_5'],
-                    'groups' => ['group_code_3'],
-                ],
-            ],
-            'metadata' => ['a_metadata_key' => 'a_metadata_value'],
-        ];
-        $fillMissingValues->fromStandardFormat($normalizedProductModel1)->willReturn($normalizedProductModel1);
-
         $connector2 = new ConnectorProductModel(
             1,
             'code_2',
@@ -109,27 +79,49 @@ class ConnectorProductModelNormalizerSpec extends ObjectBehavior
             new ReadValueCollection()
         );
 
-        $normalizedProductModel2 = [
-            'code' => 'code_2',
-            'family' => 'another_family',
-            'family_variant' => 'another_family_variant',
-            'parent' => null,
-            'categories' => [],
-            'values' => (object)[],
-            'created' => '2019-04-23T15:55:50+00:00',
-            'updated' => '2019-04-25T15:55:50+00:00',
-            'associations' => (object)[],
-        ];
-        $fillMissingValues->fromStandardFormat($normalizedProductModel2)->willReturn($normalizedProductModel2);
-
         $this->normalizeConnectorProductModelList(new ConnectorProductModelList(1, [$connector1, $connector2]))
-             ->shouldBeLike([$normalizedProductModel1, $normalizedProductModel2]);
+             ->shouldBeLike(
+                 [
+                     [
+                         'code' => 'code_1',
+                         'family' => 'family',
+                         'family_variant' => 'family_variant',
+                         'parent' => null,
+                         'categories' => ['category_code_1', 'category_code_2'],
+                         'values' => (object)[],
+                         'created' => '2019-04-23T15:55:50+00:00',
+                         'updated' => '2019-04-25T15:55:50+00:00',
+                         'associations' => [
+                             'X_SELL' => [
+                                 'products' => ['product_code_1'],
+                                 'product_models' => [],
+                                 'groups' => ['group_code_2'],
+                             ],
+                             'UPSELL' => [
+                                 'products' => ['product_code_4'],
+                                 'product_models' => ['product_model_5'],
+                                 'groups' => ['group_code_3'],
+                             ],
+                         ],
+                         'metadata' => ['a_metadata_key' => 'a_metadata_value'],
+                     ],
+                     [
+                         'code' => 'code_2',
+                         'family' => 'another_family',
+                         'family_variant' => 'another_family_variant',
+                         'parent' => null,
+                         'categories' => [],
+                         'values' => (object)[],
+                         'created' => '2019-04-23T15:55:50+00:00',
+                         'updated' => '2019-04-25T15:55:50+00:00',
+                         'associations' => (object)[],
+                     ],
+                 ]
+             );
     }
 
-    function it_normalizes_a_single_connector_product_model(
-        ProductValueNormalizer $productValuesNormalizer,
-        FillMissingValuesInterface $fillMissingValues
-    ) {
+    function it_normalizes_a_single_connector_product_model(ProductValueNormalizer $productValuesNormalizer)
+    {
         $scalarValue = ScalarValue::value('some_text', 'some data');
         $productValuesNormalizer->normalize($scalarValue, 'standard')->willReturn(
             [
@@ -159,35 +151,32 @@ class ConnectorProductModelNormalizerSpec extends ObjectBehavior
             new ReadValueCollection([$scalarValue])
         );
 
-        $normalizedProductModel = [
-            'code' => 'product_model_code',
-            'family' => 'clothing',
-            'family_variant' => 'clothing_by_size',
-            'parent' => null,
-            'categories' => ['sportswear', 'men'],
-            'values' => [
-                'some_text' => [
-                    [
-                        'scope' => null,
-                        'locale' => null,
-                        'data' => 'some data',
+        $this->normalizeConnectorProductModel($connectorProductModel)->shouldReturn(
+            [
+                'code' => 'product_model_code',
+                'family' => 'clothing',
+                'family_variant' => 'clothing_by_size',
+                'parent' => null,
+                'categories' => ['sportswear', 'men'],
+                'values' => [
+                    'some_text' => [
+                        [
+                            'scope' => null,
+                            'locale' => null,
+                            'data' => 'some data',
+                        ],
                     ],
                 ],
-            ],
-            'created' => '2018-05-16T12:10:15+00:00',
-            'updated' => '2018-05-17T14:20:44+00:00',
-            'associations' => [
-                'UPSELL' => [
-                    'groups' => [],
-                    'products' => ['product_1'],
-                    'product_models' => ['other_product_model'],
+                'created' => '2018-05-16T12:10:15+00:00',
+                'updated' => '2018-05-17T14:20:44+00:00',
+                'associations' => [
+                    'UPSELL' => [
+                        'groups' => [],
+                        'products' => ['product_1'],
+                        'product_models' => ['other_product_model'],
+                    ],
                 ],
-            ],
-        ];
-        $fillMissingValues->fromStandardFormat($normalizedProductModel)->willReturn($normalizedProductModel);
-
-        $this->normalizeConnectorProductModel($connectorProductModel)->shouldReturn(
-            $normalizedProductModel
+            ]
         );
     }
 }
