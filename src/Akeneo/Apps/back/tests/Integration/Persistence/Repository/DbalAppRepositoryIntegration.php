@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Akeneo\Apps\back\tests\Integration\Persistence;
+namespace Akeneo\Apps\back\tests\Integration\Persistence\Repository;
 
 use Akeneo\Apps\Domain\Model\Read\App as ReadApp;
 use Akeneo\Apps\Domain\Model\ValueObject\ClientId;
@@ -61,8 +61,9 @@ SQL;
 
     public function test_it_fetches_all_apps()
     {
-        $this->insertApp('magento', 'Magento connector', 'data_destination');
-        $this->insertApp('erp', 'ERP Connector', 'data_source');
+        $this->insertApp('magento', 'Magento connector', FlowType::DATA_DESTINATION);
+        sleep(1); // Apps are ordered by creation date so you need to have a difference to assert the order
+        $this->insertApp('erp', 'ERP Connector', FlowType::DATA_SOURCE);
 
         $apps = $this->repository->fetchAll();
 
@@ -70,12 +71,12 @@ SQL;
         Assert::assertInstanceOf(ReadApp::class, $apps[0]);
         Assert::assertSame('magento', $apps[0]->code());
         Assert::assertSame('Magento connector', $apps[0]->label());
-        Assert::assertSame('data_destination', $apps[0]->flowType());
+        Assert::assertSame(FlowType::DATA_DESTINATION, $apps[0]->flowType());
 
         Assert::assertInstanceOf(ReadApp::class, $apps[1]);
         Assert::assertSame('erp', $apps[1]->code());
         Assert::assertSame('ERP Connector', $apps[1]->label());
-        Assert::assertSame('data_source', $apps[1]->flowType());
+        Assert::assertSame(FlowType::DATA_SOURCE, $apps[1]->flowType());
     }
 
     private function insertApp(string $code, string $label, string $flowType): void
