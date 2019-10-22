@@ -7,10 +7,6 @@ namespace Akeneo\Apps\Infrastructure\Cli;
 use Akeneo\Apps\Application\Command\CreateAppCommand;
 use Akeneo\Apps\Application\Command\CreateAppHandler;
 use Akeneo\Apps\Application\Query\FetchAppsHandler;
-use Akeneo\Apps\Application\Query\FetchAppsQuery;
-use Akeneo\Apps\Domain\Exception\ConstraintViolationListException;
-use Akeneo\Apps\Domain\Model\ValueObject\AppCode;
-use Akeneo\Apps\Domain\Model\ValueObject\AppLabel;
 use Akeneo\Apps\Domain\Model\ValueObject\FlowType;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,7 +21,10 @@ class AppCommand extends ContainerAwareCommand
 {
     protected static $defaultName = 'akeneo:app:create';
 
+    /** @var CreateAppHandler */
     private $createAppHandler;
+
+    /** @var FetchAppsHandler */
     private $fetchAppsHandler;
 
     public function __construct(CreateAppHandler $createAppHandler, FetchAppsHandler $fetchAppsHandler)

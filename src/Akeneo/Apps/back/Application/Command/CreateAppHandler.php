@@ -1,10 +1,10 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Akeneo\Apps\Application\Command;
 
 use Akeneo\Apps\Application\Service\CreateClientInterface;
+use Akeneo\Apps\Application\Service\CreateUserInterface;
 use Akeneo\Apps\Domain\Exception\ConstraintViolationListException;
 use Akeneo\Apps\Domain\Model\Write\App;
 use Akeneo\Apps\Domain\Persistence\Repository\AppRepository;
@@ -26,14 +26,19 @@ class CreateAppHandler
     /** @var ValidatorInterface */
     private $validator;
 
+    /** @var CreateUserInterface */
+    private $createUser;
+
     public function __construct(
         ValidatorInterface $validator,
         AppRepository $repository,
-        CreateClientInterface $createClient
+        CreateClientInterface $createClient,
+        CreateUserInterface $createUser
     ) {
         $this->validator = $validator;
         $this->repository = $repository;
         $this->createClient = $createClient;
+        $this->createUser = $createUser;
     }
 
     public function handle(CreateAppCommand $command): void
@@ -45,6 +50,11 @@ class CreateAppHandler
         }
 
         $clientId = $this->createClient->execute($command->label());
+        $this->createUser->execute(
+            (string) $command->code(),
+            (string) $command->label(),
+            substr(str_shuffle('azertyuiopqsdfghjklm'), rand(0, 5), rand(11, 19)) . '@akeneo.com'
+        );
 
         $appId = $this->repository->generateId();
         $app = new App(

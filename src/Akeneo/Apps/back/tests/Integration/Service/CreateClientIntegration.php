@@ -17,7 +17,7 @@ class CreateClientIntegration extends TestCase
     /** @var CreateClientInterface */
     private $createClient;
 
-    public function test_that_it_creates_an_app()
+    public function test_that_it_creates_a_client()
     {
         $clientId = $this->createClient->execute('Magento connector');
         $query = <<<SQL
