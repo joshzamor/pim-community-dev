@@ -3,12 +3,10 @@ declare(strict_types=1);
 
 namespace Akeneo\Apps\back\tests\Integration\Persistence;
 
-use Akeneo\Apps\Domain\Model\ClientId;
 use Akeneo\Apps\Domain\Model\Read\App as ReadApp;
+use Akeneo\Apps\Domain\Model\ValueObject\ClientId;
+use Akeneo\Apps\Domain\Model\ValueObject\FlowType;
 use Akeneo\Apps\Domain\Model\Write\App as WriteApp;
-use Akeneo\Apps\Domain\Model\Write\AppCode;
-use Akeneo\Apps\Domain\Model\Write\AppLabel;
-use Akeneo\Apps\Domain\Model\Write\FlowType;
 use Akeneo\Apps\Infrastructure\Persistence\Dbal\Repository\DbalAppRepository;
 use Akeneo\Test\Integration\Configuration;
 use Akeneo\Test\Integration\TestCase;
@@ -21,36 +19,52 @@ class DbalAppRepositoryIntegration extends TestCase
     private $dbal;
 
     /** @var DbalAppRepository */
-    private $appRepository;
+    private $repository;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->dbal = $this->get('database_connection');
+        $this->repository = $this->get('akeneo_app.persistence.repository.app');
+    }
 
     public function test_it_saves_a_new_app()
     {
-        $id = $this->getClientId('magento');
-        $this->appRepository->create(WriteApp::create(
-            '42',
-            'magento',
-            'Magento connector',
-            FlowType::DATA_DESTINATION,
-            new ClientId($id)
-        ));
+        $clientId = $this->createClient('magento');
+        $uuid = $this->repository->generateId();
+
+        $this->repository->create(
+            new WriteApp(
+                $uuid,
+                'magento',
+                'Magento connector',
+                FlowType::DATA_DESTINATION,
+                $clientId
+            )
+        );
 
         $query = <<<SQL
-    SELECT *
+    SELECT BIN_TO_UUID(id) AS id, code, label, flow_type, client_id
     FROM akeneo_app
     WHERE code = :code
 SQL;
         $statement = $this->dbal->executeQuery($query, ['code' => 'magento']);
         $result = $statement->fetch();
 
+        Assert::assertSame($uuid, $result['id']);
+        Assert::assertSame('magento', $result['code']);
         Assert::assertSame('Magento connector', $result['label']);
         Assert::assertSame(FlowType::DATA_DESTINATION, $result['flow_type']);
-        Assert::assertSame($id, (int) $result['client_id']);
+        Assert::assertSame($clientId->id(), (int) $result['client_id']);
     }
 
     public function test_it_fetches_all_apps()
     {
-        $this->insertApps();
-        $apps = $this->appRepository->fetchAll();
+        $this->insertApp('magento', 'Magento connector', 'data_destination');
+        $this->insertApp('erp', 'ERP Connector', 'data_source');
+
+        $apps = $this->repository->fetchAll();
 
         Assert::assertCount(2, $apps);
         Assert::assertInstanceOf(ReadApp::class, $apps[0]);
@@ -64,11 +78,20 @@ SQL;
         Assert::assertSame('data_source', $apps[1]->flowType());
     }
 
-    protected function setUp(): void
+    private function insertApp(string $code, string $label, string $flowType): void
     {
-        parent::setUp();
-        $this->dbal = $this->get('database_connection');
-        $this->appRepository = $this->get('akeneo_app.persistence.repository.app');
+        $clientId = $this->createClient($label);
+        $id = $this->repository->generateId();
+
+        $insertSql = <<<SQL
+    INSERT INTO akeneo_app (id, client_id, code, label, flow_type)
+    VALUES (UUID_TO_BIN(:id), :client_id, :code, :label, :flow_type)
+SQL;
+
+        $this->dbal->executeQuery(
+            $insertSql,
+            ['id' => $id, 'client_id' => $clientId->id(), 'code' => $code, 'label' => $label, 'flow_type' => $flowType]
+        );
     }
 
     protected function getConfiguration(): Configuration
@@ -76,37 +99,10 @@ SQL;
         return $this->catalog->useMinimalCatalog();
     }
 
-    private function insertApps(): void
+    private function createClient(string $label): ClientId
     {
-        $magentoClientId = $this->getClientId('magento');
-        $erpClientId = $this->getClientId('erp');
-        $insertClient = <<<SQL
-    INSERT INTO akeneo_app (client_id, code, label, flow_type)
-    VALUES
-        (:magento_id, 'magento', 'Magento connector', 'data_destination'),
-        (:erp_id, 'erp', 'ERP Connector', 'data_source')
-SQL;
-
-        $this->dbal->executeQuery($insertClient, ['magento_id' => $magentoClientId, 'erp_id' => $erpClientId]);
-    }
-
-    private function getClientId(string $label): int
-    {
-        $insertClient = <<<SQL
-    INSERT INTO pim_api_client (random_id, redirect_uris, secret, allowed_grant_types, label)
-    VALUES ('1234', '', 'secret', 'blop', :label)
-SQL;
-        $selectClient = <<<SQL
-    SELECT id
-    FROM pim_api_client
-    WHERE label = :label
-SQL;
-
-        $this->dbal->executeQuery($insertClient, ['label' => $label]);
-
-        $selectStmt = $this->dbal->executeQuery($selectClient, ['label' => $label]);
-        $result = $selectStmt->fetch();
-
-        return (int) $result['id'];
+        return $this
+            ->get('akeneo_app.service.client.create_client')
+            ->execute($label);
     }
 }
